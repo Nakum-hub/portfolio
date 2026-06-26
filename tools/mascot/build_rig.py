@@ -69,7 +69,9 @@ def cut(rgba, fg):
     lower = apply(ramp(WAIST_Y - 41, WAIST_Y - 40))                         # opaque from under the hem
     def cx(y):
         xx = np.where(fg[y])[0]; return float((xx.min() + xx.max()) / 2) if len(xx) else W / 2
-    return {"head": head, "upper": upper, "lower": lower}, {"neck": [cx(NECK_Y), NECK_Y], "waist": [cx(WAIST_Y), WAIST_Y]}
+    feet_y = int(np.where(fg.any(1))[0].max())
+    return ({"head": head, "upper": upper, "lower": lower},
+            {"neck": [cx(NECK_Y), NECK_Y], "waist": [cx(WAIST_Y), WAIST_Y], "feet": [cx(feet_y - 25), feet_y]})
 
 def datauri(im):
     im = im.resize((round(im.width * F), round(im.height * F)), Image.LANCZOS)
@@ -85,9 +87,9 @@ def main():
         im.save(os.path.join(PARTS_DIR, k + ".webp"), quality=92, method=6)   # stored for inspection
         uris[k], n = datauri(im); total += n
     sc = lambda p: [round(p[0] * F, 1), round(p[1] * F, 1)]
-    RIG = {"parts": uris, "neck": sc(piv["neck"]), "waist": sc(piv["waist"]),
+    RIG = {"parts": uris, "neck": sc(piv["neck"]), "waist": sc(piv["waist"]), "feet": sc(piv["feet"]),
            "crop": [round(c * F, 1) for c in CROP]}
-    json.dump({"neck": piv["neck"], "waist": piv["waist"], "F": F, "crop": CROP, "bytes": total},
+    json.dump({"neck": piv["neck"], "waist": piv["waist"], "feet": piv["feet"], "F": F, "crop": CROP, "bytes": total},
               open(os.path.join(PARTS_DIR, "rig.json"), "w"), indent=2)
     print("rig parts %d KB" % (total // 1024))
 
