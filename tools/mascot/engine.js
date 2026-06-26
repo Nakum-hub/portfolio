@@ -64,21 +64,17 @@ window.Mascot=(function(){
     ensureLoop();
   }
 
-  /* ---- entrance: stride in (side-on walk), arrive, turn to face you, idle ---- */
-  function offX(){ var r=el.getBoundingClientRect(); return -(r.right+34); }
-  function walkIn(){
+  /* ---- entrance: a front-facing fade-in. Front & centre only — no side posing, no zoom. ---- */
+  function enter(){
     el.classList.add('arrived');
-    if(RM || !CLIPS.walk){ el.style.transform='translateX(0)'; startClip(DEFAULT,true); render(); return api; }
-    var x0=offX(), dur=2200, t0=null;
-    el.style.transform='translateX('+x0+'px)'; startClip('walk', true);
-    function slide(ts){
-      if(t0===null) t0=ts;
-      var p=Math.min(1,(ts-t0)/dur), e=1-Math.pow(1-p,2.4);
-      el.style.transform='translateX('+(x0*(1-e)).toFixed(1)+'px)';
-      if(p<1) requestAnimationFrame(slide);
-      else { el.style.transform='translateX(0)'; startClip(DEFAULT,true); }   /* crossfade walk->idle = turn */
-    }
-    requestAnimationFrame(slide);
+    startClip(DEFAULT, true);
+    if(RM){ el.style.opacity='1'; render(); return api; }
+    el.style.opacity='0';
+    var t0=null;
+    function fade(ts){ if(t0===null) t0=ts; var p=Math.min(1,(ts-t0)/700);
+      el.style.opacity=(p*p*(3-2*p)).toFixed(3);                  /* smoothstep fade-in, no movement/zoom */
+      if(p<1) requestAnimationFrame(fade); }
+    requestAnimationFrame(fade);
     return api;
   }
 
@@ -89,15 +85,15 @@ window.Mascot=(function(){
   function has(n){ return !!CLIPS[n]; }
   function say(t,ms){ if(!bubble) return api; bubble.textContent=t; bubble.classList.add('show'); clearTimeout(say._t); if(ms!==0) say._t=setTimeout(function(){bubble.classList.remove('show');},ms||2600); return api; }
   function hush(){ if(bubble) bubble.classList.remove('show'); return api; }
-  var api={play:play,queue:queue,walkIn:walkIn,list:list,has:has,say:say,hush:hush,el:el,clips:CLIPS};
+  var api={play:play,queue:queue,enter:enter,walkIn:enter,list:list,has:has,say:say,hush:hush,el:el,clips:CLIPS};
 
   function autostart(){
     if(RM){ cur={name:DEFAULT,f:0,acc:0}; render(); return; }
     var pre=document.getElementById('preloader');
     if(pre && !pre.classList.contains('done')){           /* wait for the splash to lift, so the walk-in is seen */
-      var obs=new MutationObserver(function(){ if(pre.classList.contains('done')){ obs.disconnect(); setTimeout(walkIn,260); } });
+      var obs=new MutationObserver(function(){ if(pre.classList.contains('done')){ obs.disconnect(); setTimeout(enter,260); } });
       obs.observe(pre,{attributes:true,attributeFilter:['class']});
-    } else walkIn();
+    } else enter();
   }
   preload(function(){ if(document.readyState==='complete') autostart(); else window.addEventListener('load',autostart); });
   return api;

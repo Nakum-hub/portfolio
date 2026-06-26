@@ -5,6 +5,12 @@ It is not a single animation: it is an engine that plays **named motion clips** 
 `<canvas>`, where each clip is a small sprite-atlas of full-body frames. Adding a new
 gesture later is a **data change**, not new engineering.
 
+> **POLICY — front & centre, full-body only.** Every clip must show the **full body,
+> head-to-shoes** (never partial, never cropped), framed **front and centre** (no
+> side / left / right posing, no zoom in or out). The character is rendered at a
+> constant size. **Back-facing** clips are allowed **only when explicitly requested**.
+> The entrance is a front-facing fade-in (no movement, no zoom).
+
 ## The two pieces
 
 | File | Role |
@@ -12,9 +18,13 @@ gesture later is a **data change**, not new engineering.
 | `engine.js` | The in-browser player (template). Loads clips, plays/queues them, crossfades between them, runs the walk-in entrance, honours `prefers-reduced-motion`. `__FW__`, `__FH__`, `__CLIPS__` are filled in at build time. |
 | `build_clip.py` | The offline builder. Cuts frames, removes the background, **normalizes every frame to one full-body canvas**, packs each clip into a WebP atlas, and injects the engine + clips into `index.html`. |
 
-Sources live in `sources/` (the side-on `walk_atlas.webp`) and the reference `*.mp4`
-in the repo root. Built atlases are written to `clips/` for inspection and embedded
-as data URIs in `index.html` (the portfolio is a single self-contained file).
+The reference `*.mp4` in the repo root is the main source (real, front-facing motion).
+Built atlases are written to `clips/` for inspection and embedded as data URIs in
+`index.html` (the portfolio is a single self-contained file).
+
+> `sources/walk_atlas.webp` is a side-on walk that is **retained but unused** under the
+> front-only policy above. A real walk is inherently a side view, so a front-facing walk
+> would need front-facing walk reference frames (the video contains none).
 
 ## Why "normalize to a common canvas"
 
@@ -39,22 +49,22 @@ clips are interchangeable. **Always full-body, head-to-shoes, never cropped.**
    ```
    - `loop: True` for resting/continuous motions (idle), `False` for one-shots (wave, nod).
    - `pingpong: True` makes a short clip loop seamlessly (plays forward then back).
-   - `mirror: True` flips horizontally (the walk uses this to face right).
+   - `mirror: True` flips horizontally (rarely needed for front-facing clips).
 3. **Build:** `python3 tools/mascot/build_clip.py`
 4. **Use it** from the page or console: `Mascot.play('wave')`, `Mascot.queue('idle')`.
 
 ## Player API
 
 ```js
-Mascot.walkIn()              // entrance: stride in, turn, settle into idle (auto-runs)
+Mascot.enter()               // entrance: front-facing fade-in, settle into idle (auto-runs)
 Mascot.play(name,{loop})     // play a clip now (clears the queue)
 Mascot.queue(name,{loop})    // play after the current clip finishes
-Mascot.list()                // -> ["walk","idle", ...]
+Mascot.list()                // -> ["idle", ...]
 Mascot.has(name)             // is a clip registered?
 Mascot.say(text,ms)          // speech bubble; Mascot.hush() to dismiss
 ```
 
-Under `prefers-reduced-motion` the character simply stands (idle frame), no walk-in.
+Under `prefers-reduced-motion` the character simply stands (idle frame), no fade-in.
 
 ## Canvas constants (keep stable across clips)
 

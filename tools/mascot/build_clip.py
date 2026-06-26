@@ -46,16 +46,17 @@ BODY_H = 392               # head-top -> feet-bottom maps to this many px
 BASE_Y = CH - 34           # feet baseline
 
 # ---- the gesture library (the single source of truth) ----
+# POLICY: front-and-centre, full-body only. No side/left/right posing, no zoom.
+#         Back-facing clips are allowed only when explicitly requested.
 # fps  : playback speed; loop: keep looping; mirror: flip horizontally;
 # video sources take a list of frame numbers; pingpong makes a seamless loop.
 CLIPS = {
-    "walk": {"source": "walk-atlas", "frames": list(range(1, 13)),
-             "mirror": True,  "fps": 13, "loop": True},
-    "idle": {"source": "video",      "frames": list(range(180, 217, 4)),
+    "idle": {"source": "video", "frames": list(range(180, 217, 4)),
              "pingpong": True, "mirror": False, "fps": 9, "loop": True},
-    # --- add more gestures here, e.g. ---
-    # "talk":   {"source":"video", "frames":list(range(150,186,3)), "fps":11, "loop":False, "mirror":False},
+    # --- add more FRONT-FACING, full-body gestures here, e.g. ---
+    # "talk":   {"source":"video", "frames":list(range(150,186,3)), "fps":11, "loop":False},
     # "wave":   {"source":"video", "frames":[...], "fps":12, "loop":False},
+    # "back":   {"source":"video", "frames":[...], "fps":9,  "loop":True},   # only when you ask for it
 }
 
 # ---------------------------------------------------------------- helpers ----
