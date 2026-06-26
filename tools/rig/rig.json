@@ -1,0 +1,131 @@
+{
+ "canvas": {
+  "w": 768,
+  "h": 1365
+ },
+ "scale": 0.5,
+ "bbox": [
+  82,
+  201,
+  320,
+  1134
+ ],
+ "root_pivot": [
+  225,
+  853
+ ],
+ "parts": [
+  {
+   "name": "thighL",
+   "src": "parts/thighL.png",
+   "parent": "hips",
+   "z": 1,
+   "x": 84,
+   "y": 797,
+   "w": 162,
+   "h": 246,
+   "pivot": [
+    210,
+    853
+   ]
+  },
+  {
+   "name": "thighR",
+   "src": "parts/thighR.png",
+   "parent": "hips",
+   "z": 1,
+   "x": 240,
+   "y": 797,
+   "w": 118,
+   "h": 246,
+   "pivot": [
+    274,
+    853
+   ]
+  },
+  {
+   "name": "shinL",
+   "src": "parts/shinL.png",
+   "parent": "thighL",
+   "z": 2,
+   "x": 86,
+   "y": 1016,
+   "w": 134,
+   "h": 284,
+   "pivot": [
+    201,
+    1029
+   ]
+  },
+  {
+   "name": "shinR",
+   "src": "parts/shinR.png",
+   "parent": "thighR",
+   "z": 2,
+   "x": 268,
+   "y": 1016,
+   "w": 105,
+   "h": 319,
+   "pivot": [
+    281,
+    1029
+   ]
+  },
+  {
+   "name": "torso",
+   "src": "parts/torso.png",
+   "parent": "hips",
+   "z": 3,
+   "x": 83,
+   "y": 362,
+   "w": 319,
+   "h": 568,
+   "pivot": [
+    225,
+    768
+   ]
+  },
+  {
+   "name": "foreL",
+   "src": "parts/foreL.png",
+   "parent": "torso",
+   "z": 4,
+   "x": 84,
+   "y": 622,
+   "w": 74,
+   "h": 221,
+   "pivot": [
+    136,
+    624
+   ]
+  },
+  {
+   "name": "foreR",
+   "src": "parts/foreR.png",
+   "parent": "torso",
+   "z": 4,
+   "x": 298,
+   "y": 628,
+   "w": 90,
+   "h": 226,
+   "pivot": [
+    356,
+    632
+   ]
+  },
+  {
+   "name": "head",
+   "src": "parts/head.png",
+   "parent": "torso",
+   "z": 5,
+   "x": 152,
+   "y": 202,
+   "w": 214,
+   "h": 209,
+   "pivot": [
+    271,
+    380
+   ]
+  }
+ ]
+}

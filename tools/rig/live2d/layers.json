@@ -1,0 +1,48 @@
+{
+ "canvas": {
+  "w": 768,
+  "h": 1365
+ },
+ "layers": [
+  {
+   "name": "thighL",
+   "z": 1,
+   "file": "thighL.png"
+  },
+  {
+   "name": "thighR",
+   "z": 1,
+   "file": "thighR.png"
+  },
+  {
+   "name": "shinL",
+   "z": 2,
+   "file": "shinL.png"
+  },
+  {
+   "name": "shinR",
+   "z": 2,
+   "file": "shinR.png"
+  },
+  {
+   "name": "torso",
+   "z": 3,
+   "file": "torso.png"
+  },
+  {
+   "name": "foreL",
+   "z": 4,
+   "file": "foreL.png"
+  },
+  {
+   "name": "foreR",
+   "z": 4,
+   "file": "foreR.png"
+  },
+  {
+   "name": "head",
+   "z": 5,
+   "file": "head.png"
+  }
+ ]
+}
