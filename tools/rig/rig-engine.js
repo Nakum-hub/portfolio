@@ -68,6 +68,50 @@
     });
   }
 
+  // ---- rig-inspection overlay: bones + joint dots --------------------------
+  var BONES = [["root", "spine"], ["spine", "head"], ["spine", "upperArmL"],
+    ["upperArmL", "lowerArmL"], ["spine", "upperArmR"], ["upperArmR", "lowerArmR"],
+    ["root", "upperLegL"], ["upperLegL", "lowerLegL"], ["root", "upperLegR"],
+    ["upperLegR", "lowerLegR"]];
+  var skel = document.createElementNS(SVGNS, "g");
+  skel.setAttribute("opacity", "0");
+  var lines = BONES.map(function () {
+    var l = document.createElementNS(SVGNS, "line");
+    l.setAttribute("stroke", "#5eead4"); l.setAttribute("stroke-width", "5");
+    l.setAttribute("stroke-linecap", "round"); skel.appendChild(l); return l;
+  });
+  var dots = {};
+  ["root", "spine", "head", "upperArmL", "lowerArmL", "upperArmR", "lowerArmR",
+    "upperLegL", "lowerLegL", "upperLegR", "lowerLegR"].forEach(function (n) {
+    var c = document.createElementNS(SVGNS, "circle");
+    c.setAttribute("r", n === "root" ? "11" : "8");
+    c.setAttribute("fill", n === "root" ? "#a78bfa" : "#fb7185");
+    c.setAttribute("stroke", "#fff"); c.setAttribute("stroke-width", "2");
+    skel.appendChild(c); dots[n] = c;
+  });
+  svg.appendChild(skel);
+
+  function pt(m, x, y) { return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]]; }
+  function jointPos(name) {
+    if (name === "root") return pt(world("hips"), ROOT[0], ROOT[1]);
+    return pt(world(name), P[name].pivot[0], P[name].pivot[1]);
+  }
+  function updateSkel() {
+    BONES.forEach(function (b, i) {
+      var a = jointPos(b[0]), c = jointPos(b[1]);
+      lines[i].setAttribute("x1", a[0]); lines[i].setAttribute("y1", a[1]);
+      lines[i].setAttribute("x2", c[0]); lines[i].setAttribute("y2", c[1]);
+    });
+    for (var n in dots) { var q = jointPos(n); dots[n].setAttribute("cx", q[0]); dots[n].setAttribute("cy", q[1]); }
+  }
+
+  // how far each part drifts from the body in "Rig view" (canvas units)
+  var EXP = {
+    head: [0, -78], spine: [0, 0],
+    upperArmL: [-78, -6], lowerArmL: [-132, 46], upperArmR: [78, -6], lowerArmR: [132, 46],
+    upperLegL: [-44, 74], lowerLegL: [-60, 156], upperLegR: [44, 74], lowerLegR: [60, 156]
+  };
+
   // ---- input: pointer look-at ---------------------------------------------
   var look = { x: 0, y: 0 }, lookT = { x: 0, y: 0 }, pointerSeen = 0;
   function onMove(e) {
@@ -84,6 +128,7 @@
   // ---- animation state -----------------------------------------------------
   var REST = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
   var mode = "idle", modeT = 0, walking = false, t0 = performance.now();
+  var rigView = false, expl = 0;          // rig-inspection explode amount 0..1
   var TAU = Math.PI * 2;
 
   function setMode(m) {
@@ -158,6 +203,18 @@
     }
 
     applyAll();
+    // ---- rig view: drift parts apart + show the skeleton ------------------
+    expl += ((rigView ? 1 : 0) - expl) * 0.12;
+    if (expl > 0.002) {
+      RIG.parts.forEach(function (p) {
+        var e = EXP[p.name]; if (!e) return;
+        var s = pose[p.name] || (pose[p.name] = {});
+        s.tx = (s.tx || 0) + expl * e[0]; s.ty = (s.ty || 0) + expl * e[1];
+      });
+      applyAll();
+    }
+    skel.setAttribute("opacity", expl.toFixed(3));
+    if (expl > 0.002) updateSkel();
     requestAnimationFrame(frame);
   }
   applyAll();
@@ -170,6 +227,7 @@
     cheer: function () { setMode("cheer"); },
     walk: function () { setMode("walk"); },
     rest: function () { walking = false; mode = "idle"; modeT = 0; },
+    rig: function (on) { rigView = on == null ? !rigView : !!on; return rigView; },
     look: function (x, y) { lookT.x = x; lookT.y = y == null ? 0 : y; pointerSeen = performance.now(); },
     _setMode: setMode, _pose: function () { return pose; }
   };

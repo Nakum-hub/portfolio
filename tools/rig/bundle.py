@@ -57,6 +57,7 @@ TEMPLATE = r"""<!DOCTYPE html>
           padding:11px 18px; backdrop-filter:blur(6px); transition:.18s;}
   button:hover{border-color:var(--mint); color:var(--mint); transform:translateY(-1px);}
   button:active{transform:translateY(0);}
+  button.on{border-color:var(--mint); color:var(--mint); background:rgba(94,234,212,.14);}
   .hint{position:fixed; top:16px; left:0; right:0; text-align:center; color:var(--dim);
         font-size:13px; letter-spacing:.02em;}
 </style>
@@ -74,6 +75,7 @@ TEMPLATE = r"""<!DOCTYPE html>
     <button onclick="Rig.cheer()">🙌 Cheer</button>
     <button onclick="Rig.walk()">🚶 Walk</button>
     <button onclick="Rig.rest()">🧍 Idle</button>
+    <button id="rigBtn" onclick="this.classList.toggle('on', Rig.rig())">🦴 Rig view</button>
   </div>
   <script>window.__RIG__ = /*__RIG__*/;</script>
   <script>/*__ENGINE__*/</script>
