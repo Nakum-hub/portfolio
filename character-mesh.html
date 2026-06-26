@@ -144,14 +144,15 @@
   function frame(now) {
     var t = (now - t0) / 1000, a = REST ? 0 : 1;
     var br = 0.5 + 0.5 * Math.sin(TAU * t / 4.2);
-    // upright idle: gentle breathing only — NO sway, NO lean, face forward
+    // upright idle: the face stays rigid & forward (no scale, no turn); the torso
+    // keeps its shape (only the faintest breathing). Nothing reshapes the body.
     pose.hips = { ang: 0 };
-    pose.spine = { ang: 0, sx: 1, sy: 1 + a * 0.012 * br };
-    pose.head = { ang: a * 0.012 * Math.sin(TAU * t / 5.0), sy: 1 + a * 0.01 * br };
-    pose.upperArmL = { ang: a * 0.02 * Math.sin(TAU * t / 5.5) };
-    pose.upperArmR = { ang: a * 0.02 * Math.sin(TAU * t / 5.5 + Math.PI) };
-    pose.lowerArmL = { ang: a * 0.025 * Math.sin(TAU * t / 5.5) };
-    pose.lowerArmR = { ang: a * 0.025 * Math.sin(TAU * t / 5.5 + Math.PI) };
+    pose.spine = { ang: 0, sx: 1, sy: 1 + a * 0.006 * br };
+    pose.head = { ang: 0 };
+    pose.upperArmL = { ang: a * 0.015 * Math.sin(TAU * t / 5.5) };
+    pose.upperArmR = { ang: a * 0.015 * Math.sin(TAU * t / 5.5 + Math.PI) };
+    pose.lowerArmL = { ang: a * 0.02 * Math.sin(TAU * t / 5.5) };
+    pose.lowerArmR = { ang: a * 0.02 * Math.sin(TAU * t / 5.5 + Math.PI) };
     pose.upperLegL = { ang: 0 }; pose.upperLegR = { ang: 0 };
     pose.lowerLegL = { ang: 0 }; pose.lowerLegR = { ang: 0 };
 
