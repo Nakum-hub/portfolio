@@ -1,0 +1,16 @@
+{
+  "idle": {
+    "frames": 18,
+    "fps": 9,
+    "loop": true,
+    "bytes": 256680,
+    "active": true
+  },
+  "walk": {
+    "frames": 12,
+    "fps": 13,
+    "loop": true,
+    "bytes": 179354,
+    "active": false
+  }
+}
