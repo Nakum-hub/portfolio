@@ -1,0 +1,58 @@
+{
+ "canvas": {
+  "w": 768,
+  "h": 1365
+ },
+ "layers": [
+  {
+   "name": "upperLegL",
+   "z": 1,
+   "file": "upperLegL.png"
+  },
+  {
+   "name": "upperLegR",
+   "z": 1,
+   "file": "upperLegR.png"
+  },
+  {
+   "name": "lowerLegL",
+   "z": 2,
+   "file": "lowerLegL.png"
+  },
+  {
+   "name": "lowerLegR",
+   "z": 2,
+   "file": "lowerLegR.png"
+  },
+  {
+   "name": "spine",
+   "z": 3,
+   "file": "spine.png"
+  },
+  {
+   "name": "upperArmL",
+   "z": 4,
+   "file": "upperArmL.png"
+  },
+  {
+   "name": "upperArmR",
+   "z": 4,
+   "file": "upperArmR.png"
+  },
+  {
+   "name": "head",
+   "z": 5,
+   "file": "head.png"
+  },
+  {
+   "name": "lowerArmL",
+   "z": 6,
+   "file": "lowerArmL.png"
+  },
+  {
+   "name": "lowerArmR",
+   "z": 6,
+   "file": "lowerArmR.png"
+  }
+ ]
+}

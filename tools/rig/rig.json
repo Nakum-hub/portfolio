@@ -1,0 +1,159 @@
+{
+ "canvas": {
+  "w": 768,
+  "h": 1365
+ },
+ "scale": 0.5,
+ "bbox": [
+  82,
+  201,
+  320,
+  1134
+ ],
+ "root_pivot": [
+  225,
+  853
+ ],
+ "parts": [
+  {
+   "name": "upperLegL",
+   "src": "parts/upperLegL.png",
+   "parent": "hips",
+   "z": 1,
+   "x": 84,
+   "y": 797,
+   "w": 162,
+   "h": 246,
+   "pivot": [
+    210,
+    853
+   ]
+  },
+  {
+   "name": "upperLegR",
+   "src": "parts/upperLegR.png",
+   "parent": "hips",
+   "z": 1,
+   "x": 240,
+   "y": 797,
+   "w": 118,
+   "h": 246,
+   "pivot": [
+    274,
+    853
+   ]
+  },
+  {
+   "name": "lowerLegL",
+   "src": "parts/lowerLegL.png",
+   "parent": "upperLegL",
+   "z": 2,
+   "x": 86,
+   "y": 1016,
+   "w": 134,
+   "h": 284,
+   "pivot": [
+    201,
+    1029
+   ]
+  },
+  {
+   "name": "lowerLegR",
+   "src": "parts/lowerLegR.png",
+   "parent": "upperLegR",
+   "z": 2,
+   "x": 268,
+   "y": 1016,
+   "w": 105,
+   "h": 319,
+   "pivot": [
+    281,
+    1029
+   ]
+  },
+  {
+   "name": "spine",
+   "src": "parts/spine.png",
+   "parent": "hips",
+   "z": 3,
+   "x": 83,
+   "y": 362,
+   "w": 319,
+   "h": 568,
+   "pivot": [
+    225,
+    768
+   ]
+  },
+  {
+   "name": "upperArmL",
+   "src": "parts/upperArmL.png",
+   "parent": "spine",
+   "z": 4,
+   "x": 121,
+   "y": 408,
+   "w": 96,
+   "h": 228,
+   "pivot": [
+    202,
+    445
+   ]
+  },
+  {
+   "name": "upperArmR",
+   "src": "parts/upperArmR.png",
+   "parent": "spine",
+   "z": 4,
+   "x": 268,
+   "y": 408,
+   "w": 134,
+   "h": 234,
+   "pivot": [
+    282,
+    445
+   ]
+  },
+  {
+   "name": "head",
+   "src": "parts/head.png",
+   "parent": "spine",
+   "z": 5,
+   "x": 152,
+   "y": 202,
+   "w": 214,
+   "h": 209,
+   "pivot": [
+    271,
+    380
+   ]
+  },
+  {
+   "name": "lowerArmL",
+   "src": "parts/lowerArmL.png",
+   "parent": "upperArmL",
+   "z": 6,
+   "x": 83,
+   "y": 621,
+   "w": 77,
+   "h": 222,
+   "pivot": [
+    136,
+    624
+   ]
+  },
+  {
+   "name": "lowerArmR",
+   "src": "parts/lowerArmR.png",
+   "parent": "upperArmR",
+   "z": 6,
+   "x": 295,
+   "y": 628,
+   "w": 96,
+   "h": 229,
+   "pivot": [
+    356,
+    632
+   ]
+  }
+ ]
+}
