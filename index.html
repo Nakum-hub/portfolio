@@ -767,7 +767,9 @@ window.Mascot=(function(){
   var ctx=cv.getContext('2d'); cv.width=M.cw; cv.height=M.ch;
   var atlas=new Image(), ready=false, walking=false;
   function draw(f){ f=((Math.round(f)%M.count)+M.count)%M.count;
-    ctx.clearRect(0,0,M.cw,M.ch); ctx.drawImage(atlas,f*M.cw,0,M.cw,M.ch,0,0,M.cw,M.ch); }
+    ctx.clearRect(0,0,M.cw,M.ch);
+    ctx.save(); ctx.translate(M.cw,0); ctx.scale(-1,1);                 // mirror: face right (his travel + content side)
+    ctx.drawImage(atlas,f*M.cw,0,M.cw,M.ch,0,0,M.cw,M.ch); ctx.restore(); }
   function say(t,ms){ if(!bubble) return api; bubble.textContent=t; bubble.classList.add('show');
     clearTimeout(say._t); if(ms!==0) say._t=setTimeout(function(){bubble.classList.remove('show');},ms||2600); return api; }
   function hush(){ if(bubble) bubble.classList.remove('show'); return api; }
