@@ -70,7 +70,8 @@ TEMPLATE = r"""<!DOCTYPE html>
   </div>
   <div class="controls">
     <button onclick="Rig.wave()">👋 Wave</button>
-    <button onclick="Rig.gesture()">💬 Gesture</button>
+    <button onclick="Rig.point()">👉 Point</button>
+    <button onclick="Rig.cheer()">🙌 Cheer</button>
     <button onclick="Rig.walk()">🚶 Walk</button>
     <button onclick="Rig.rest()">🧍 Idle</button>
   </div>

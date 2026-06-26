@@ -102,17 +102,17 @@ def main():
         sizes = ndimage.sum(np.ones_like(lbl), lbl, range(1, n + 1))
         return lbl == (np.argmax(sizes) + 1)
 
-    # ---- forearms = SKIN forearm + hand + watch only (the rolled sleeve cuff
-    # stays on the torso). A skin/sleeve colour boundary cuts cleanly, so rotating
-    # the forearm never tears the dark shirt. -----------------------------------
-    skin = char & (R > 135) & (R - B > 20) & (R - G > 6) & (bright > 116) & (bright < 236) & ~beige
-    arm_band = skin & (yy > shoulder_y + 12) & (yy < y0 + 0.60 * Hb)   # forearms only
+    def softmask(m):
+        # soft-edged float mask; arm layers and the torso-removal share it so their
+        # alphas sum to ~1 at the seam (both garment-dark -> no light gap, no sliver).
+        return np.clip(ndimage.gaussian_filter(m.astype(np.float32), 2.0) * 1.5, 0, 1)
 
-    vert = np.array([[0, 1, 0], [0, 1, 0], [0, 1, 0]], bool)     # vertical line element
+    # ---- forearms = SKIN forearm + hand + watch (the elbow/lower-arm bone) -----
+    skin = char & (R > 135) & (R - B > 20) & (R - G > 6) & (bright > 116) & (bright < 236) & ~beige
+    arm_band = skin & (yy > shoulder_y + 12) & (yy < y0 + 0.60 * Hb)
+    vert = np.array([[0, 1, 0], [0, 1, 0], [0, 1, 0]], bool)
 
     def arm_blob(sidemask):
-        # keep only the large arm components (forearm + hand), dropping trouser/shoe
-        # skin false-positives; then bridge the watch band vertically + fill it in.
         lbl, n = ndimage.label(arm_band & sidemask)
         keep = np.zeros_like(arm_band)
         for i in range(1, n + 1):
@@ -124,22 +124,49 @@ def main():
         return ndimage.binary_fill_holes(m) & char
     foreL_b = arm_blob(xx < inseam_x)
     foreR_b = arm_blob(xx >= inseam_x)
+    cuffL_y = int(np.where(foreL_b)[0].min())
+    cuffR_y = int(np.where(foreR_b)[0].min())
 
     def forearm_layer(blob):
         ys_b, xs_b = np.where(blob)
         top = ys_b.min()
         cuff = float(xs_b[ys_b < top + 10].mean())
-        soft = ramp_up(yy, top - 2, top + 22)                    # feather the cuff seam
-        return charf * soft * blob, (cuff, float(top + 6))
+        soft = ramp_up(yy, top - 2, top + 22)
+        return charf * soft * softmask(blob), (cuff, float(top + 6))
     foreL, pivL = forearm_layer(foreL_b)
     foreR, pivR = forearm_layer(foreR_b)
+
+    # ---- upper arms = the dark sleeve, shoulder -> elbow (the upper-arm bone) ---
+    # Cut the lateral sleeve from the torso along the raglan seam. Both are flat
+    # charcoal, so the inner cut is invisible at rest and reads as the body side
+    # (flat dark) when the arm lifts.
+    dark = char & (bright < 100)
+    span = (yy - AY(0.20)) / (AY(0.40) - AY(0.20))
+    innerR = AX(0.60) + span * (AX(0.645) - AX(0.60))      # right arm inner boundary
+    innerL = AX(0.40) + span * (AX(0.355) - AX(0.40))      # left  arm inner boundary
+    uaR_b = largest(dark & (yy >= AY(0.185)) & (yy <= cuffR_y + 24) & (xx > innerR - 6) & (xx >= inseam_x))
+    uaL_b = largest(dark & (yy >= AY(0.185)) & (yy <= cuffL_y + 24) & (xx < innerL + 6) & (xx < inseam_x))
+    upperArmR = charf * softmask(uaR_b) * ramp_dn(yy, cuffR_y + 8, cuffR_y + 28)   # feather elbow overlap
+    upperArmL = charf * softmask(uaL_b) * ramp_dn(yy, cuffL_y + 8, cuffL_y + 28)
+    pivUAR = (float(AX(0.625)), float(AY(0.215)))           # shoulder joints (top-inner)
+    pivUAL = (float(AX(0.375)), float(AY(0.215)))
 
     # ---- head (hair+face+neck), opaque to the collar then feather out ----------
     head = charf * ramp_dn(yy, neck_y + 8, neck_y + 8 + FEATHER * 2)
 
-    # ---- torso (shirt body incl. upper arms), opaque across full width ---------
-    torso_band = ramp_up(yy, neck_y - 36, neck_y + 6) * ramp_dn(yy, hem, hem + FEATHER * 2)
-    torso = charf * torso_band
+    # ---- torso/spine: a clean BODY contour (no arm bulges), feathered at the
+    # sides, with the arm-covered areas bled flat from the central shirt/trouser.
+    # So when an arm lifts you see a smooth torso side, not the arm's old outline.
+    # ---- torso/spine: full silhouette minus the WHOLE arm footprint -----------
+    # Removing the arms (with a soft edge) means a lifted arm reveals a clean body
+    # edge / the beige thigh behind it, never the arm's dark imprint; the arms,
+    # drawn on top, cover the soft seam at rest.
+    # torso-removal is eroded vs the arm layers, so the arms (drawn on top) always
+    # over-cover the seam at rest; a lifted arm leaves only a thin dark margin that
+    # vanishes against a dark background.
+    arm_soft = softmask(ndimage.binary_erosion(uaL_b | uaR_b | foreL_b | foreR_b, iterations=4))
+    spine_band = ramp_up(yy, neck_y - 36, neck_y + 6) * ramp_dn(yy, hem, hem + FEATHER * 2)
+    torso = charf * spine_band * (1.0 - arm_soft)
 
     # ---- legs: thigh + shin per side, split by the inseam, overlap at knee -----
     side_L = xx <= inseam_x + 6
@@ -151,30 +178,40 @@ def main():
     shinL = charf * shin_band * side_L
     shinR = charf * shin_band * side_R
 
-    # ---- inpaint the limb footprints in the base layers ------------------------
-    # Bleed only flat garment colour into the hole: dilate the arm mask (erase any
-    # feather ghost) and forbid near-white silhouette-halo pixels as a fill source.
+    # ---- inpaint the limb footprints by bleeding flat garment colour -----------
+    # Garment-aware (split at the belt) and never sourcing the near-white halo.
     mn = rgb.min(axis=2)
-    halo = mn >= 238                                   # anti-aliased white edge
-    arm_zone = ndimage.binary_dilation(foreL_b | foreR_b, iterations=14)
+    halo = mn >= 238
+    belt = waist_y + 0.02 * Hb
+    arm_cover = ndimage.binary_dilation(foreL_b | foreR_b | uaL_b | uaR_b, iterations=20)
 
     def repaint(layer_alpha):
         solid = layer_alpha > 0.02
-        valid = ndimage.binary_erosion(solid & ~arm_zone & ~halo, iterations=2)
-        return nearest_fill(rgb, valid, solid & arm_zone)
+        hole = solid & arm_cover
+        valid = solid & ~arm_cover & ~halo
+        dark_src = ndimage.binary_erosion(valid & (bright < 110), iterations=1)
+        beige_src = ndimage.binary_erosion(valid & beige, iterations=1)
+        out = rgb.copy()
+        if dark_src.any():
+            out = nearest_fill(out, dark_src, hole & (yy < belt))
+        if beige_src.any():
+            out = nearest_fill(out, beige_src, hole & (yy >= belt))
+        return out
     torso_rgb = repaint(torso)
     thighL_rgb = repaint(thighL)
     thighR_rgb = repaint(thighR)
 
     parts = {
-        "thighL": (thighL, thighL_rgb, (AX(J["hipL"]), AY(J["hip_y"])), "hips", 1),
-        "thighR": (thighR, thighR_rgb, (AX(J["hipR"]), AY(J["hip_y"])), "hips", 1),
-        "shinL":  (shinL, rgb, (AX(J["kneeL"]), AY(J["knee_y"])), "thighL", 2),
-        "shinR":  (shinR, rgb, (AX(J["kneeR"]), AY(J["knee_y"])), "thighR", 2),
-        "torso":  (torso, torso_rgb, (cx(waist_y), waist_y), "hips", 3),
-        "foreL":  (foreL, rgb, pivL, "torso", 4),
-        "foreR":  (foreR, rgb, pivR, "torso", 4),
-        "head":   (head, rgb, (cx(neck_y), neck_y), "torso", 5),
+        "upperLegL": (thighL, thighL_rgb, (AX(J["hipL"]), AY(J["hip_y"])), "hips", 1),
+        "upperLegR": (thighR, thighR_rgb, (AX(J["hipR"]), AY(J["hip_y"])), "hips", 1),
+        "lowerLegL": (shinL, rgb, (AX(J["kneeL"]), AY(J["knee_y"])), "upperLegL", 2),
+        "lowerLegR": (shinR, rgb, (AX(J["kneeR"]), AY(J["knee_y"])), "upperLegR", 2),
+        "spine":     (torso, torso_rgb, (cx(waist_y), waist_y), "hips", 3),
+        "upperArmL": (upperArmL, rgb, pivUAL, "spine", 4),
+        "upperArmR": (upperArmR, rgb, pivUAR, "spine", 4),
+        "head":      (head, rgb, (cx(neck_y), neck_y), "spine", 5),
+        "lowerArmL": (foreL, rgb, pivL, "upperArmL", 6),
+        "lowerArmR": (foreR, rgb, pivR, "upperArmR", 6),
     }
 
     os.makedirs(os.path.join(OUT_DIR, "parts"), exist_ok=True)

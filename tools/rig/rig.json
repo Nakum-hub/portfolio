@@ -16,8 +16,8 @@
  ],
  "parts": [
   {
-   "name": "thighL",
-   "src": "parts/thighL.png",
+   "name": "upperLegL",
+   "src": "parts/upperLegL.png",
    "parent": "hips",
    "z": 1,
    "x": 84,
@@ -30,8 +30,8 @@
    ]
   },
   {
-   "name": "thighR",
-   "src": "parts/thighR.png",
+   "name": "upperLegR",
+   "src": "parts/upperLegR.png",
    "parent": "hips",
    "z": 1,
    "x": 240,
@@ -44,9 +44,9 @@
    ]
   },
   {
-   "name": "shinL",
-   "src": "parts/shinL.png",
-   "parent": "thighL",
+   "name": "lowerLegL",
+   "src": "parts/lowerLegL.png",
+   "parent": "upperLegL",
    "z": 2,
    "x": 86,
    "y": 1016,
@@ -58,9 +58,9 @@
    ]
   },
   {
-   "name": "shinR",
-   "src": "parts/shinR.png",
-   "parent": "thighR",
+   "name": "lowerLegR",
+   "src": "parts/lowerLegR.png",
+   "parent": "upperLegR",
    "z": 2,
    "x": 268,
    "y": 1016,
@@ -72,8 +72,8 @@
    ]
   },
   {
-   "name": "torso",
-   "src": "parts/torso.png",
+   "name": "spine",
+   "src": "parts/spine.png",
    "parent": "hips",
    "z": 3,
    "x": 83,
@@ -86,37 +86,37 @@
    ]
   },
   {
-   "name": "foreL",
-   "src": "parts/foreL.png",
-   "parent": "torso",
+   "name": "upperArmL",
+   "src": "parts/upperArmL.png",
+   "parent": "spine",
    "z": 4,
-   "x": 84,
-   "y": 622,
-   "w": 74,
-   "h": 221,
+   "x": 121,
+   "y": 408,
+   "w": 96,
+   "h": 228,
    "pivot": [
-    136,
-    624
+    202,
+    445
    ]
   },
   {
-   "name": "foreR",
-   "src": "parts/foreR.png",
-   "parent": "torso",
+   "name": "upperArmR",
+   "src": "parts/upperArmR.png",
+   "parent": "spine",
    "z": 4,
-   "x": 298,
-   "y": 628,
-   "w": 90,
-   "h": 226,
+   "x": 268,
+   "y": 408,
+   "w": 134,
+   "h": 234,
    "pivot": [
-    356,
-    632
+    282,
+    445
    ]
   },
   {
    "name": "head",
    "src": "parts/head.png",
-   "parent": "torso",
+   "parent": "spine",
    "z": 5,
    "x": 152,
    "y": 202,
@@ -125,6 +125,34 @@
    "pivot": [
     271,
     380
+   ]
+  },
+  {
+   "name": "lowerArmL",
+   "src": "parts/lowerArmL.png",
+   "parent": "upperArmL",
+   "z": 6,
+   "x": 83,
+   "y": 621,
+   "w": 77,
+   "h": 222,
+   "pivot": [
+    136,
+    624
+   ]
+  },
+  {
+   "name": "lowerArmR",
+   "src": "parts/lowerArmR.png",
+   "parent": "upperArmR",
+   "z": 6,
+   "x": 295,
+   "y": 628,
+   "w": 96,
+   "h": 229,
+   "pivot": [
+    356,
+    632
    ]
   }
  ]

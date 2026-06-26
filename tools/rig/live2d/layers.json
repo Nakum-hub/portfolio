@@ -5,44 +5,54 @@
  },
  "layers": [
   {
-   "name": "thighL",
+   "name": "upperLegL",
    "z": 1,
-   "file": "thighL.png"
+   "file": "upperLegL.png"
   },
   {
-   "name": "thighR",
+   "name": "upperLegR",
    "z": 1,
-   "file": "thighR.png"
+   "file": "upperLegR.png"
   },
   {
-   "name": "shinL",
+   "name": "lowerLegL",
    "z": 2,
-   "file": "shinL.png"
+   "file": "lowerLegL.png"
   },
   {
-   "name": "shinR",
+   "name": "lowerLegR",
    "z": 2,
-   "file": "shinR.png"
+   "file": "lowerLegR.png"
   },
   {
-   "name": "torso",
+   "name": "spine",
    "z": 3,
-   "file": "torso.png"
+   "file": "spine.png"
   },
   {
-   "name": "foreL",
+   "name": "upperArmL",
    "z": 4,
-   "file": "foreL.png"
+   "file": "upperArmL.png"
   },
   {
-   "name": "foreR",
+   "name": "upperArmR",
    "z": 4,
-   "file": "foreR.png"
+   "file": "upperArmR.png"
   },
   {
    "name": "head",
    "z": 5,
    "file": "head.png"
+  },
+  {
+   "name": "lowerArmL",
+   "z": 6,
+   "file": "lowerArmL.png"
+  },
+  {
+   "name": "lowerArmR",
+   "z": 6,
+   "file": "lowerArmR.png"
   }
  ]
 }

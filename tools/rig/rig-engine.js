@@ -92,61 +92,69 @@
   }
   // ease in-out
   function ez(x) { return x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x); }
+  // one-shot envelope: ease up, hold, ease back down over duration D
+  function env(tt, D) {
+    return tt < 0.45 ? ez(tt / 0.45) : tt > D - 0.5 ? 1 - ez((tt - (D - 0.5)) / 0.5) : 1;
+  }
 
   function frame(now) {
     var t = (now - t0) / 1000;
-    // ease pointer look toward target (idle drift when pointer is away)
     var away = (now - pointerSeen) > 2600;
     if (away && !REST) { lookT.x = Math.sin(t * 0.45) * 0.5; lookT.y = 0.12 + Math.sin(t * 0.3) * 0.18; }
     look.x += (lookT.x - look.x) * 0.06; look.y += (lookT.y - look.y) * 0.06;
 
     var br = 0.5 + 0.5 * Math.sin(TAU * t / 4.0);      // breathing 0..1
-    var amp = REST ? 0 : 1;
+    var a = REST ? 0 : 1;
 
-    // ---- idle baseline (always) -------------------------------------------
-    pose.hips  = { x: 0, y: amp * (-1.2 * br), ang: amp * 0.012 * Math.sin(TAU * t / 6.2) };
-    pose.torso = { ang: amp * 0.018 * Math.sin(TAU * t / 6.2 + 0.4), sx: 1, sy: 1 + amp * 0.014 * br };
-    pose.head  = { ang: amp * 0.02 * Math.sin(TAU * t / 5.0) , tx: 0, ty: 0 };
-    pose.foreL = { ang: amp * 0.03 * Math.sin(TAU * t / 6.2) };
-    pose.foreR = { ang: amp * 0.03 * Math.sin(TAU * t / 6.2 + Math.PI) };
-    pose.thighL = { ang: 0 }; pose.thighR = { ang: 0 };
-    pose.shinL = { ang: 0 };  pose.shinR = { ang: 0 };
+    // ---- idle baseline (always) — breath, weight-shift sway, arm micro-sway --
+    pose.hips      = { x: 0, y: a * (-1.2 * br), ang: a * 0.012 * Math.sin(TAU * t / 6.2) };
+    pose.spine     = { ang: a * 0.018 * Math.sin(TAU * t / 6.2 + 0.4), sx: 1, sy: 1 + a * 0.014 * br };
+    pose.head      = { ang: a * 0.02 * Math.sin(TAU * t / 5.0), tx: 0, ty: 0 };
+    pose.upperArmL = { ang: a * 0.02 * Math.sin(TAU * t / 6.2) };
+    pose.upperArmR = { ang: a * 0.02 * Math.sin(TAU * t / 6.2 + Math.PI) };
+    pose.lowerArmL = { ang: a * 0.025 * Math.sin(TAU * t / 6.2) };
+    pose.lowerArmR = { ang: a * 0.025 * Math.sin(TAU * t / 6.2 + Math.PI) };
+    pose.upperLegL = { ang: 0 }; pose.upperLegR = { ang: 0 };
+    pose.lowerLegL = { ang: 0 }; pose.lowerLegR = { ang: 0 };
 
-    // head look-at (additive)
-    pose.head.ang += look.x * 0.20;
+    pose.head.ang += look.x * 0.20;                    // look-at (additive)
     pose.head.tx = look.x * 7; pose.head.ty = look.y * 4;
 
     modeT += 1 / 60;
-    // ---- WAVE: right forearm lifts at the elbow and waves ------------------
-    if (mode === "wave") {
-      var D = 3.0, raise = -2.25;                      // raise the forearm up-and-out
-      var k = modeT < 0.45 ? ez(modeT / 0.45)
-            : modeT > D - 0.5 ? 1 - ez((modeT - (D - 0.5)) / 0.5) : 1;
-      var wig = (modeT > 0.4 && modeT < D - 0.45) ? Math.sin((modeT - 0.4) * 10) * 0.28 : 0;
-      pose.foreR.ang += k * raise + k * wig;
-      pose.head.ang += k * 0.05;                        // slight head turn into the wave
+    // Right arm hangs down; negative shoulder angle swings it out-and-up to the
+    // character's left (image right). Left arm mirrors with a positive angle.
+    if (mode === "wave") {                             // raise R arm, wave the hand
+      var D = 3.2, k = env(modeT, D);
+      pose.upperArmR.ang += k * -2.0;
+      pose.lowerArmR.ang += k * (-0.5 + 0.45 * Math.sin((modeT) * 9));
+      pose.head.ang += k * 0.06;
       if (modeT > D) setMode("idle");
     }
-    // ---- GESTURE: a friendly "talk/present" — open the near forearm + nod --
-    if (mode === "gesture") {
-      var Dg = 2.6, kg = modeT < 0.4 ? ez(modeT / 0.4)
-            : modeT > Dg - 0.5 ? 1 - ez((modeT - (Dg - 0.5)) / 0.5) : 1;
-      pose.foreL.ang += kg * (-0.6 + Math.sin(modeT * 5) * 0.12);
-      pose.torso.ang += kg * 0.02 * Math.sin(modeT * 4);
-      pose.head.ang += kg * (0.06 * Math.sin(modeT * 4));
-      if (modeT > Dg) setMode("idle");
+    if (mode === "point") {                            // extend R arm out, steady
+      var Dp = 2.4, kp = env(modeT, Dp);
+      pose.upperArmR.ang += kp * -1.4;
+      pose.lowerArmR.ang += kp * -0.15;
+      pose.spine.ang += kp * -0.02;
+      if (modeT > Dp) setMode("idle");
     }
-    // ---- WALK: in-place stride, knees bend, body bobs, arms counter-swing ---
-    if (mode === "walk") {
+    if (mode === "cheer") {                            // both arms up
+      var Dc = 2.6, kc = env(modeT, Dc), b = Math.sin(modeT * 7) * 0.12;
+      pose.upperArmR.ang += kc * (-2.5 + b);
+      pose.upperArmL.ang += kc * (2.5 - b);
+      pose.lowerArmR.ang += kc * -0.2; pose.lowerArmL.ang += kc * 0.2;
+      pose.hips.y += a * -kc * 3 * (0.5 + 0.5 * Math.sin(modeT * 7));
+      if (modeT > Dc) setMode("idle");
+    }
+    if (mode === "walk") {                             // in-place stride
       var ph = t * TAU * 1.5;
-      pose.thighL.ang = Math.sin(ph) * 0.15;
-      pose.thighR.ang = Math.sin(ph + Math.PI) * 0.15;
-      pose.shinL.ang = Math.max(0, -Math.sin(ph)) * 0.34;
-      pose.shinR.ang = Math.max(0, -Math.sin(ph + Math.PI)) * 0.34;
+      pose.upperLegL.ang = Math.sin(ph) * 0.15;
+      pose.upperLegR.ang = Math.sin(ph + Math.PI) * 0.15;
+      pose.lowerLegL.ang = Math.max(0, -Math.sin(ph)) * 0.34;
+      pose.lowerLegR.ang = Math.max(0, -Math.sin(ph + Math.PI)) * 0.34;
       pose.hips.y += -Math.abs(Math.sin(ph)) * 3;
-      pose.foreL.ang += Math.sin(ph) * 0.11;
-      pose.foreR.ang += Math.sin(ph + Math.PI) * 0.11;
-      pose.torso.ang += Math.sin(ph) * 0.008;
+      pose.upperArmL.ang += Math.sin(ph) * 0.14;       // arms counter-swing
+      pose.upperArmR.ang += Math.sin(ph + Math.PI) * 0.14;
+      pose.spine.ang += Math.sin(ph) * 0.008;
     }
 
     applyAll();
@@ -158,7 +166,8 @@
   // ---- public API ----------------------------------------------------------
   window.Rig = {
     wave: function () { setMode("wave"); },
-    gesture: function () { setMode("gesture"); },
+    point: function () { setMode("point"); },
+    cheer: function () { setMode("cheer"); },
     walk: function () { setMode("walk"); },
     rest: function () { walking = false; mode = "idle"; modeT = 0; },
     look: function (x, y) { lookT.x = x; lookT.y = y == null ? 0 : y; pointerSeen = performance.now(); },
