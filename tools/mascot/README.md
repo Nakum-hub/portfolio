@@ -1,77 +1,52 @@
-# Mascot — full-body gesture system
+# Mascot — living character (procedural rig)
 
-The companion character in the bottom-left of the portfolio is a **gesture player**.
-It is not a single animation: it is an engine that plays **named motion clips** on a
-`<canvas>`, where each clip is a small sprite-atlas of full-body frames. Adding a new
-gesture later is a **data change**, not new engineering.
+The companion in the bottom-left of the portfolio is a **procedurally animated character**,
+not a video or a sprite flipbook. The character design is segmented into a small skeleton and
+animated **by math every frame** — the way pros bring a 2-D character to life (Live2D / Spine /
+Rive style). Nothing is pre-recorded.
 
-> **POLICY — front & centre, full-body only.** Every clip must show the **full body,
-> head-to-shoes** (never partial, never cropped), framed **front and centre** (no
-> side / left / right posing, no zoom in or out). The character is rendered at a
-> constant size. **Back-facing** clips are allowed **only when explicitly requested**.
-> The entrance is a front-facing fade-in (no movement, no zoom).
+> **What "real motion" means here.** Each frame the rig computes the pose: continuous
+> **breathing**, a **weight-shift sway**, and a **head that looks toward the visitor's cursor**
+> (with idle drift when the pointer is away). The character is always **full-body, head-to-shoes,
+> front-and-centre**, at a constant size.
 
-## The two pieces
+## The live rig
 
 | File | Role |
 | --- | --- |
-| `engine.js` | The in-browser player (template). Loads clips, plays/queues them, crossfades between them, runs the walk-in entrance, honours `prefers-reduced-motion`. `__FW__`, `__FH__`, `__CLIPS__` are filled in at build time. |
-| `build_clip.py` | The offline builder. Cuts frames, removes the background, **normalizes every frame to one full-body canvas**, packs each clip into a WebP atlas, and injects the engine + clips into `index.html`. |
+| `rig.js` | The runtime. A 3-part skeleton (head / torso+arms / legs) drawn on a `<canvas>`; every frame it applies breathing, sway and head look-at around the joint pivots. `__RIG__` (part images + pivots) is filled in at build time. |
+| `build_rig.py` | The builder. Keys the white background out of `character.png`, cuts the three parts with feathered overlapping seams, computes the neck/waist pivots, downscales the parts to WebP data URIs, fills `rig.js`, and splices the mascot block into `index.html`. |
+| `rig_parts/` | The cut parts (`head/upper/lower.webp`) + `rig.json`, for inspection. |
 
-The reference `*.mp4` in the repo root is the main source (real, front-facing motion).
-Every clip is built to `clips/` (so it is **stored** in the project), but only **active**
-clips are embedded as data URIs in `index.html` (the portfolio is a single self-contained
-file).
+Rebuild after changing the design or the rig: `python3 tools/mascot/build_rig.py`.
 
-> **Active vs stored.** Each clip has an `active` flag. *Active* clips are embedded and
-> shown — these must be **front-and-centre, full-body** (no side/left/right posing, no
-> zoom). *Stored* clips (`active: False`) are kept in the project for future use but are
-> not embedded or shown. The side-on `walk` (built from `sources/walk_atlas.webp`) is
-> stored this way so we don't lose it; flip `active: True` and rebuild to bring any clip
-> live. Back-facing clips stay stored until explicitly requested.
+### How the rig is cut (and why it's seam-free)
 
-## Why "normalize to a common canvas"
+The arms hang flush against the torso in this illustration, so the body splits cleanly into
+**head** (above the collar), **torso+arms**, and **legs**. Parts overlap and are feathered at the
+seams, and the **legs stay opaque under the shirt hem**, so sway/breathing never opens a gap.
+Pivots: the **neck** (head tilt/turn) and the **waist** (torso sway + breathing); the legs are
+planted. Draw order is legs → torso → head.
 
-The reference video **zooms** and the walk art is a different size, so raw frames would
-make the character grow/shrink and hop between gestures. `build_clip.py` therefore scales
-every frame so the **head-to-feet height is constant** and pins the **feet to a fixed
-baseline**. Result: the character is the exact same size whether walking or idling, and
-clips are interchangeable. **Always full-body, head-to-shoes, never cropped.**
+> **Honest limit.** Because the arms aren't separable in this single front illustration, the rig
+> animates head + torso + legs (which is what makes a 2-D character read as *alive*). Big arm /
+> finger gestures (a wave) would need either **extra reference art with the arm raised/separated**,
+> or a **Live2D / Spine / Rive** rig authored in that tool, or a **3-D (VRM) avatar**. Those are the
+> studio routes; this rig is the fully-automatic one buildable from the art we have.
 
-## Adding a gesture (the whole workflow)
+## Motion reference (recorded clips — kept, not played)
 
-1. **Find the frames.** Make a contact sheet of the reference clip:
-   ```bash
-   ffmpeg -i "*.mp4" -vf "fps=2,scale=300:-1" /tmp/sheet_%03d.png
-   ```
-   Pick a frame range where the **full body and shoes are visible** (the first ~1.5 s of
-   the clip is zoomed in to the thigh — avoid it). Frame number = sheet index × 15.
-2. **Register it** in `CLIPS` inside `build_clip.py`:
-   ```python
-   "wave": {"source": "video", "frames": list(range(330, 366, 3)),
-            "fps": 12, "loop": False, "mirror": False, "active": True},
-   ```
-   - `active: True` embeds + shows it (front-and-centre, full-body only); `False` stores it for later.
-   - `loop: True` for resting/continuous motions (idle), `False` for one-shots (wave, nod).
-   - `pingpong: True` makes a short clip loop seamlessly (plays forward then back).
-   - `mirror: True` flips horizontally (rarely needed for front-facing clips).
-3. **Build:** `python3 tools/mascot/build_clip.py`
-4. **Use it** from the page or console: `Mascot.play('wave')`, `Mascot.queue('idle')`.
+The reference video and the recorded clips under `clips/` (built by `build_clip.py` from
+`sources/`) are **kept only as motion reference** — they show how the gestures should *look*.
+They are **not** embedded or played on the page. Treat them as the brief for new rig motions, or
+as source if we ever switch to a clip-based fallback.
 
-## Player API
+## API
 
 ```js
-Mascot.enter()               // entrance: front-facing fade-in, settle into idle (auto-runs)
-Mascot.play(name,{loop})     // play a clip now (clears the queue)
-Mascot.queue(name,{loop})    // play after the current clip finishes
-Mascot.list()                // -> ["idle", ...]
-Mascot.has(name)             // is a clip registered?
-Mascot.say(text,ms)          // speech bubble; Mascot.hush() to dismiss
+Mascot.look(x, y)   // make the head look toward a point (x,y in 0..1 of the canvas)
+Mascot.rest()       // stop tracking; return to idle drift
+Mascot.el           // the mascot element
 ```
 
-Under `prefers-reduced-motion` the character simply stands (idle frame), no fade-in.
-
-## Canvas constants (keep stable across clips)
-
-`CW=320, CH=460, BODY_H=392, BASE_Y=CH-34`. Changing these re-scales every gesture, so
-rebuild **all** clips if you touch them.
+Under `prefers-reduced-motion` the character stands still (no breathing/sway/tracking).
