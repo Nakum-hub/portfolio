@@ -19,12 +19,16 @@ gesture later is a **data change**, not new engineering.
 | `build_clip.py` | The offline builder. Cuts frames, removes the background, **normalizes every frame to one full-body canvas**, packs each clip into a WebP atlas, and injects the engine + clips into `index.html`. |
 
 The reference `*.mp4` in the repo root is the main source (real, front-facing motion).
-Built atlases are written to `clips/` for inspection and embedded as data URIs in
-`index.html` (the portfolio is a single self-contained file).
+Every clip is built to `clips/` (so it is **stored** in the project), but only **active**
+clips are embedded as data URIs in `index.html` (the portfolio is a single self-contained
+file).
 
-> `sources/walk_atlas.webp` is a side-on walk that is **retained but unused** under the
-> front-only policy above. A real walk is inherently a side view, so a front-facing walk
-> would need front-facing walk reference frames (the video contains none).
+> **Active vs stored.** Each clip has an `active` flag. *Active* clips are embedded and
+> shown — these must be **front-and-centre, full-body** (no side/left/right posing, no
+> zoom). *Stored* clips (`active: False`) are kept in the project for future use but are
+> not embedded or shown. The side-on `walk` (built from `sources/walk_atlas.webp`) is
+> stored this way so we don't lose it; flip `active: True` and rebuild to bring any clip
+> live. Back-facing clips stay stored until explicitly requested.
 
 ## Why "normalize to a common canvas"
 
@@ -45,8 +49,9 @@ clips are interchangeable. **Always full-body, head-to-shoes, never cropped.**
 2. **Register it** in `CLIPS` inside `build_clip.py`:
    ```python
    "wave": {"source": "video", "frames": list(range(330, 366, 3)),
-            "fps": 12, "loop": False, "mirror": False},
+            "fps": 12, "loop": False, "mirror": False, "active": True},
    ```
+   - `active: True` embeds + shows it (front-and-centre, full-body only); `False` stores it for later.
    - `loop: True` for resting/continuous motions (idle), `False` for one-shots (wave, nod).
    - `pingpong: True` makes a short clip loop seamlessly (plays forward then back).
    - `mirror: True` flips horizontally (rarely needed for front-facing clips).

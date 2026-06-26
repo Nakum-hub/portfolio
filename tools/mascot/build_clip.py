@@ -46,17 +46,23 @@ BODY_H = 392               # head-top -> feet-bottom maps to this many px
 BASE_Y = CH - 34           # feet baseline
 
 # ---- the gesture library (the single source of truth) ----
-# POLICY: front-and-centre, full-body only. No side/left/right posing, no zoom.
-#         Back-facing clips are allowed only when explicitly requested.
+# POLICY: only ACTIVE clips are embedded in index.html and shown, and those must be
+#         front-and-centre, full-body (no side/left/right posing, no zoom).
+#         STORED clips (active=False) are kept in the project (source + built to clips/)
+#         for future use but are NOT embedded or shown. Flip active:True + rebuild to use one.
 # fps  : playback speed; loop: keep looping; mirror: flip horizontally;
 # video sources take a list of frame numbers; pingpong makes a seamless loop.
 CLIPS = {
+    # --- ACTIVE: front-and-centre, full-body, shown on the page ---
     "idle": {"source": "video", "frames": list(range(180, 217, 4)),
-             "pingpong": True, "mirror": False, "fps": 9, "loop": True},
-    # --- add more FRONT-FACING, full-body gestures here, e.g. ---
-    # "talk":   {"source":"video", "frames":list(range(150,186,3)), "fps":11, "loop":False},
-    # "wave":   {"source":"video", "frames":[...], "fps":12, "loop":False},
-    # "back":   {"source":"video", "frames":[...], "fps":9,  "loop":True},   # only when you ask for it
+             "pingpong": True, "mirror": False, "fps": 9, "loop": True, "active": True},
+
+    # --- STORED: kept for the future, built to clips/ but not embedded/shown ---
+    "walk": {"source": "walk-atlas", "frames": list(range(1, 13)),
+             "mirror": True, "fps": 13, "loop": True, "active": False},   # side-on walk, archived
+    # add more here (front gestures: set active True; side/back clips: keep active False until asked)
+    # "talk": {"source":"video", "frames":list(range(150,186,3)), "fps":11, "loop":False, "active":True},
+    # "back": {"source":"video", "frames":[...], "fps":9, "loop":True, "active":False},
 }
 
 # ---------------------------------------------------------------- helpers ----
@@ -140,12 +146,16 @@ def main():
         norm = build_frames(name, spec, video)
         q = 82 if spec["source"] == "walk-atlas" else 78
         atlas, raw, n = atlas_b64(norm, q)
-        atlas.save(os.path.join(CLIPS_DIR, name + ".webp"), quality=q, method=6)  # inspect artefact
-        src = "data:image/webp;base64," + base64.b64encode(raw).decode()
-        registry.append('%s:{src:"%s",n:%d,fps:%d,loop:%s}'
-                        % (name, src, n, spec.get("fps", 12), "true" if spec.get("loop") else "false"))
-        manifest[name] = {"frames": n, "fps": spec.get("fps", 12), "loop": bool(spec.get("loop")), "bytes": len(raw)}
-        print(f"  {name:8s} frames={n:3d}  {len(raw)//1024:4d} KB")
+        atlas.save(os.path.join(CLIPS_DIR, name + ".webp"), quality=q, method=6)   # always stored
+        active = bool(spec.get("active", True))
+        manifest[name] = {"frames": n, "fps": spec.get("fps", 12), "loop": bool(spec.get("loop")),
+                          "bytes": len(raw), "active": active}
+        tag = "embed" if active else "store"
+        print(f"  {name:8s} frames={n:3d}  {len(raw)//1024:4d} KB  [{tag}]")
+        if active:                                                                  # only active are embedded
+            src = "data:image/webp;base64," + base64.b64encode(raw).decode()
+            registry.append('%s:{src:"%s",n:%d,fps:%d,loop:%s}'
+                            % (name, src, n, spec.get("fps", 12), "true" if spec.get("loop") else "false"))
     json.dump(manifest, open(os.path.join(CLIPS_DIR, "clips.json"), "w"), indent=2)
 
     clips_literal = "{" + ",".join(registry) + "}"
