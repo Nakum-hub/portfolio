@@ -388,6 +388,11 @@ main .section.contact>.wrap::before{background:linear-gradient(135deg,rgba(251,1
       <div class="scroll-cue"><span>SCROLL</span><span class="track"></span></div>
     </div>
   </div>
+  <!-- ===== character companion — 3D rig (CharacterRigged.glb) ===== -->
+  <div id="mascot" class="mascot" aria-hidden="true">
+    <canvas class="mascot__cv" id="mascotGL"></canvas>
+    <span class="mascot__shadow"></span>
+  </div>
 </header>
 
 <div class="marquee"><div class="marquee__t" id="marquee"></div></div>
@@ -742,19 +747,15 @@ document.querySelectorAll('.copy').forEach(function(b){b.addEventListener('click
 </script>
 <style>
 /* ===== character companion — 3D toon-shaded rig ===== */
-.mascot{position:fixed;left:18px;bottom:18px;z-index:40;pointer-events:none;display:flex;flex-direction:column;align-items:center;opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease;}
+.mascot{position:absolute;right:3%;top:15vh;z-index:2;pointer-events:none;display:flex;flex-direction:column;align-items:center;opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease;}
 .mascot.loaded{opacity:1;transform:translateY(0);}
 .mascot.breathe{animation:mascotBreathe 4.2s ease-in-out infinite;}
-.mascot__cv{display:block;height:clamp(230px,38vh,340px);aspect-ratio:3/4;width:auto;}
-.mascot__shadow{display:block;width:56%;height:10px;margin-top:-6px;border-radius:50%;background:radial-gradient(closest-side, rgba(0,0,0,.45), transparent 75%);filter:blur(1px);}
+.mascot__cv{display:block;height:68vh;aspect-ratio:3/4;width:auto;max-width:38vw;}
+.mascot__shadow{display:block;width:56%;height:14px;margin-top:-8px;border-radius:50%;background:radial-gradient(closest-side, rgba(0,0,0,.45), transparent 75%);filter:blur(1px);}
 @keyframes mascotBreathe{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
-@media(max-width:640px){.mascot{left:4px;}.mascot__cv{height:150px;}}
+@media(max-width:900px){.mascot{position:relative;right:auto;top:auto;margin:18px auto 0;}.mascot__cv{height:38vh;max-width:60vw;}}
+@media(max-width:640px){.mascot__cv{height:30vh;}}
 </style>
-<!-- ===== character companion — 3D rig (CharacterRigged.glb) ===== -->
-<div id="mascot" class="mascot" aria-hidden="true">
-  <canvas class="mascot__cv" id="mascotGL"></canvas>
-  <span class="mascot__shadow"></span>
-</div>
 <script type="importmap">
 {
   "imports": {
