@@ -745,7 +745,7 @@ document.querySelectorAll('.copy').forEach(function(b){b.addEventListener('click
 .mascot{position:fixed;left:18px;bottom:18px;z-index:40;pointer-events:none;display:flex;flex-direction:column;align-items:center;opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease;}
 .mascot.loaded{opacity:1;transform:translateY(0);}
 .mascot.breathe{animation:mascotBreathe 4.2s ease-in-out infinite;}
-.mascot__cv{display:block;height:clamp(190px,32vh,285px);aspect-ratio:3/4;width:auto;}
+.mascot__cv{display:block;height:clamp(230px,38vh,340px);aspect-ratio:3/4;width:auto;}
 .mascot__shadow{display:block;width:56%;height:10px;margin-top:-6px;border-radius:50%;background:radial-gradient(closest-side, rgba(0,0,0,.45), transparent 75%);filter:blur(1px);}
 @keyframes mascotBreathe{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 @media(max-width:640px){.mascot{left:4px;}.mascot__cv{height:150px;}}
@@ -852,14 +852,18 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
       // cropped, instead of trusting a fixed camera position that assumed a
       // proportions/height it didn't actually check against.
       var modelDepth = size.z * scale;
-      var fillRatio = 0.75; // character occupies ~75% of frame height; rest is headroom/footroom margin
+      var fillRatio = 0.88; // character occupies ~88% of frame height; still auto-computed so full body stays guaranteed in-frame
       var vFov = camera.fov * Math.PI / 180;
       var camDist = (targetHeight / fillRatio / 2) / Math.tan(vFov / 2) + modelDepth * 0.6;
       camera.position.set(0, targetHeight / 2, camDist);
       camera.lookAt(0, targetHeight / 2, 0);
       camera.updateProjectionMatrix();
 
-      if (gltf.animations && gltf.animations.length){
+      // The GLB's only baked clip ("NlaTrack_Armature") is a walk cycle, not an idle —
+      // wrong motion for a portfolio corner element. Standing still in the rest pose
+      // instead of playing it. mixer is left wired up so a custom idle/breathing clip
+      // can be dropped in later without re-plumbing this.
+      if (false && gltf.animations && gltf.animations.length){
         mixer = new THREE.AnimationMixer(model);
         var clip = gltf.animations.find(function(c){ return /idle|breath/i.test(c.name); }) || gltf.animations[0];
         mixer.clipAction(clip).play();
