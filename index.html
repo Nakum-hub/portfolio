@@ -615,9 +615,17 @@ document.getElementById('mclose').addEventListener('click',closeMobile);
 window.addEventListener('load',function(){
   var pct=document.getElementById('prePct'),bar=document.getElementById('preBar');
   var dur=RM?1:1000,start=null;
-  function step(ts){if(!start)start=ts;var p=Math.min((ts-start)/dur,1);var e=1-Math.pow(1-p,3);pct.textContent=Math.round(e*100)+'%';bar.style.width=(e*100)+'%';if(p<1&&!RM){requestAnimationFrame(step);}else{pct.textContent='100%';bar.style.width='100%';setTimeout(finish,260);}}
-  if(RM){finish();}else{requestAnimationFrame(step);}
+  function step(ts){if(!start)start=ts;var p=Math.min((ts-start)/dur,1);var e=1-Math.pow(1-p,3);var shown=Math.min(e*100,97);pct.textContent=Math.round(shown)+'%';bar.style.width=shown+'%';if(p<1&&!RM){requestAnimationFrame(step);}else{waitForMascotThenFinish();}}
+  if(RM){waitForMascotThenFinish();}else{requestAnimationFrame(step);}
 });
+function waitForMascotThenFinish(){
+  var pct=document.getElementById('prePct'),bar=document.getElementById('preBar');
+  var settled=false;
+  function complete(){if(settled)return;settled=true;pct.textContent='100%';bar.style.width='100%';setTimeout(finish,260);}
+  if(window.mascotReady){complete();return;}
+  var safety=setTimeout(complete,7000);
+  (window.__mascotReadyPromise||Promise.resolve()).then(function(){clearTimeout(safety);complete();});
+}
 function finish(){document.getElementById('preloader').classList.add('done');setTimeout(function(){document.getElementById('home').classList.add('in');},120);}
 
 /* ===== progress + nav state + totop ===== */
@@ -774,6 +782,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
   if (!wrap || !canvas) return;
 
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.mascotReady = false;
+  window.__mascotReadyPromise = new Promise(function(resolve){ window.__resolveMascotReady = resolve; });
 
   // 4-step cel-shading gradient ramp used by every toon material below
   function buildToonGradient(){
@@ -860,6 +870,83 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
       camera.lookAt(0, targetHeight / 2, 0);
       camera.updateProjectionMatrix();
 
+      // ---- Face features: blink + talk ----
+      // This GLB has NO morph targets and NO facial bones (checked the raw glTF —
+      // only a single "Head" joint, no jaw/eye sub-rig) so real eyelid/mouth
+      // deformation isn't possible with this asset. These are small flat overlays
+      // positioned using the actual head-region vertex bounding box measured
+      // directly from the mesh (vertices weighted to the Head joint), not guessed,
+      // then placed within it using standard face-proportion fractions. Depth-test
+      // is off so they always render on top of the face regardless of exact
+      // z-alignment. Positioning is an estimate — if it's off once you see it live,
+      // tell me which direction and I'll adjust the *Frac / *Offset constants below.
+      var headMin = new THREE.Vector3(-0.12615401, 0.60427898, -0.146222);
+      var headMax = new THREE.Vector3(0.120374, 0.94820303, 0.110547);
+      var headSize = new THREE.Vector3().subVectors(headMax, headMin);
+      var eyeYFrac = 0.52, mouthYFrac = 0.20;
+      var eyeXOffset = headSize.x * 0.30;
+      var faceZ = headMax.z + headSize.z * 0.15;
+
+      function facePoint(x, yFrac){ return new THREE.Vector3(x, headMin.y + headSize.y * yFrac, faceZ); }
+      var leftEyePos = facePoint(-eyeXOffset, eyeYFrac);
+      var rightEyePos = facePoint(eyeXOffset, eyeYFrac);
+      var mouthPos = facePoint(0, mouthYFrac);
+
+      function makeFeature(color, w, h){
+        var geo = new THREE.PlaneGeometry(w, h);
+        var mat = new THREE.MeshBasicMaterial({ color: color, depthTest: false, transparent: true });
+        var m = new THREE.Mesh(geo, mat);
+        m.renderOrder = 999;
+        m.scale.y = 0.001;
+        return m;
+      }
+      var eyeW = headSize.x * 0.22, eyeH = headSize.y * 0.10;
+      var mouthW = headSize.x * 0.30, mouthH = headSize.y * 0.10;
+      var leftEye = makeFeature(0x1c120d, eyeW, eyeH);
+      var rightEye = makeFeature(0x1c120d, eyeW, eyeH);
+      var mouth = makeFeature(0x1c120d, mouthW, mouthH);
+      leftEye.position.copy(leftEyePos);
+      rightEye.position.copy(rightEyePos);
+      mouth.position.copy(mouthPos);
+      model.add(leftEye, rightEye, mouth);
+
+      // Blink: automatic, ambient, human-ish randomized interval. Not gated by
+      // any external trigger since real blinking isn't something you'd script per-line.
+      function blinkOnce(){
+        var t0 = performance.now(), dur = 120;
+        function closing(){
+          var k = Math.min(1, (performance.now() - t0) / dur);
+          leftEye.scale.y = rightEye.scale.y = Math.max(0.001, k);
+          if (k < 1) requestAnimationFrame(closing); else { var t1 = performance.now(); opening(t1); }
+        }
+        function opening(t1){
+          var k = Math.min(1, (performance.now() - t1) / dur);
+          leftEye.scale.y = rightEye.scale.y = Math.max(0.001, 1 - k);
+          if (k < 1) requestAnimationFrame(function(){ opening(t1); });
+        }
+        closing();
+      }
+      function scheduleBlink(){
+        var delay = 2600 + Math.random() * 3200;
+        setTimeout(function(){ blinkOnce(); scheduleBlink(); }, delay);
+      }
+      if (!reduceMotion) scheduleBlink();
+
+      // Talk: OFF by default, on-demand only. window.mascotTalk(true/false) —
+      // this is the hook for syncing to voice-over later; nothing calls it yet.
+      var talking = false;
+      window.mascotTalk = function(active){
+        talking = !!active;
+        if (!talking){ mouth.scale.y = 0.001; return; }
+        var t0 = performance.now();
+        (function loop(){
+          if (!talking) return;
+          var t = (performance.now() - t0) / 1000;
+          mouth.scale.y = 0.15 + 0.85 * Math.abs(Math.sin(t * 9.2));
+          requestAnimationFrame(loop);
+        })();
+      };
+
       // The GLB's only baked clip ("NlaTrack_Armature") is a walk cycle, not an idle —
       // wrong motion for a portfolio corner element. Standing still in the rest pose
       // instead of playing it. mixer is left wired up so a custom idle/breathing clip
@@ -870,6 +957,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         mixer.clipAction(clip).play();
       }
 
+      window.mascotReady = true;
+      window.__resolveMascotReady();
       wrap.classList.add('loaded');
       if (!reduceMotion) wrap.classList.add('breathe');
       resize();
@@ -877,6 +966,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     undefined,
     function(err){
       console.error('CharacterRigged.glb failed to load:', err);
+      window.__resolveMascotReady();
     }
   );
 
